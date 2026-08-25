@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Protocol, TypeAlias
 
 from lumen.contracts import CriticScores, CriticVerdict, QualityGate, Shot
+from lumen.media_tools import resolve_ffmpeg
 
 CriticPayload: TypeAlias = CriticVerdict | Mapping[str, Any] | str
 
@@ -29,30 +30,42 @@ class CriticVLM(Protocol):
 
 
 def probe_duration(clip_path: str | Path, *, ffprobe_bin: str = "ffprobe") -> float:
-    """Read clip duration through ffprobe without parsing human-readable output."""
+    """Read duration through ffprobe, falling back to imageio-ffmpeg metadata."""
 
     clip = Path(clip_path)
     if not clip.is_file():
         raise FileNotFoundError(clip)
-    completed = subprocess.run(
-        [
-            ffprobe_bin,
-            "-v",
-            "error",
-            "-show_entries",
-            "format=duration",
-            "-of",
-            "default=noprint_wrappers=1:nokey=1",
-            str(clip),
-        ],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
     try:
-        duration = float(completed.stdout.strip())
-    except ValueError as exc:
-        raise ValueError(f"ffprobe returned an invalid duration: {completed.stdout!r}") from exc
+        completed = subprocess.run(
+            [
+                ffprobe_bin,
+                "-v",
+                "error",
+                "-show_entries",
+                "format=duration",
+                "-of",
+                "default=noprint_wrappers=1:nokey=1",
+                str(clip),
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        try:
+            duration = float(completed.stdout.strip())
+        except ValueError as exc:
+            raise ValueError(
+                f"ffprobe returned an invalid duration: {completed.stdout!r}"
+            ) from exc
+    except FileNotFoundError:
+        import imageio_ffmpeg
+
+        reader = imageio_ffmpeg.read_frames(str(clip), pix_fmt="rgb24")
+        try:
+            metadata = next(reader)
+        finally:
+            reader.close()
+        duration = float(metadata.get("duration") or 0)
     if duration <= 0:
         raise ValueError(f"clip duration must be positive, got {duration}")
     return duration
@@ -78,8 +91,7 @@ def extract_frame_data_urls(
         temp_root = Path(temp_dir)
         for index, timestamp in enumerate(timestamps):
             frame = temp_root / f"frame-{index + 1:02d}.jpg"
-            subprocess.run(
-                [
+            command = [
                     ffmpeg_bin,
                     "-v",
                     "error",
@@ -93,10 +105,12 @@ def extract_frame_data_urls(
                     "-q:v",
                     "2",
                     str(frame),
-                ],
-                check=True,
-                capture_output=True,
-            )
+                ]
+            try:
+                subprocess.run(command, check=True, capture_output=True)
+            except FileNotFoundError:
+                command[0] = resolve_ffmpeg(ffmpeg_bin)
+                subprocess.run(command, check=True, capture_output=True)
             if not frame.is_file() or frame.stat().st_size == 0:
                 raise RuntimeError(f"ffmpeg did not produce frame {index + 1}")
             encoded.append(

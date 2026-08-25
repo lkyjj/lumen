@@ -25,6 +25,7 @@ def build_dag(project: FilmProject, project_root: Path | None = None) -> list[Da
             agent="screenwriter",
             model="Qwen/Qwen3.5-35B-A3B",
             output=str(root / "01_script" / "script.json"),
+            execution_plane="hybrid",
         ),
         DagStep(
             id="storyboarder",
@@ -32,6 +33,7 @@ def build_dag(project: FilmProject, project_root: Path | None = None) -> list[Da
             depends_on=["screenwriter"],
             model="Qwen/Qwen3.5-35B-A3B",
             output=str(root / "02_shots" / "shots.json"),
+            execution_plane="hybrid",
         ),
     ]
 
@@ -50,6 +52,8 @@ def build_dag(project: FilmProject, project_root: Path | None = None) -> list[Da
                 estimated_cost_cny=image_cost,
                 worst_case_cost_cny=image_cost,
                 paid=True,
+                execution_plane="cloud",
+                requires_human_gate=True,
             )
         )
 
@@ -70,6 +74,7 @@ def build_dag(project: FilmProject, project_root: Path | None = None) -> list[Da
                 estimated_cost_cny=image_cost,
                 worst_case_cost_cny=image_cost,
                 paid=True,
+                execution_plane="cloud",
             )
         )
 
@@ -97,6 +102,7 @@ def build_dag(project: FilmProject, project_root: Path | None = None) -> list[Da
                         video_cost * (project.quality_gate.max_retries + 1), 2
                     ),
                     paid=True,
+                    execution_plane="cloud",
                 ),
                 DagStep(
                     id=critic_id,
@@ -104,6 +110,7 @@ def build_dag(project: FilmProject, project_root: Path | None = None) -> list[Da
                     depends_on=[camera_id],
                     model="Qwen/Qwen3-VL-8B-Instruct",
                     output=str(root / "04_clips" / "generated" / f"{shot.id}_review.json"),
+                    execution_plane="hybrid",
                 ),
             ]
         )
@@ -127,6 +134,7 @@ def build_dag(project: FilmProject, project_root: Path | None = None) -> list[Da
                 estimated_cost_cny=tts_cost,
                 worst_case_cost_cny=tts_cost,
                 paid=tts_cost > 0,
+                execution_plane="cloud",
             ),
             DagStep(
                 id="editor",
@@ -134,6 +142,7 @@ def build_dag(project: FilmProject, project_root: Path | None = None) -> list[Da
                 depends_on=[*critic_steps, "sound_designer"],
                 model="ffmpeg",
                 output=str(root / "06_cut" / "generated" / "final.mp4"),
+                execution_plane="local",
             ),
         ]
     )
@@ -167,6 +176,7 @@ def render_dry_run(project: FilmProject, dag: list[DagStep]) -> str:
         )
         lines.append(
             f"{index:02d}. {step.id} [{step.agent}] deps={dependencies} "
+            f"plane={step.execution_plane} gate={'human' if step.requires_human_gate else '-'} "
             f"model={step.model or '-'} cost={cost}"
         )
     lines.extend(

@@ -312,6 +312,8 @@ class DagStep(Contract):
     estimated_cost_cny: float = Field(default=0, ge=0)
     worst_case_cost_cny: float = Field(default=0, ge=0)
     paid: bool = False
+    execution_plane: Literal["local", "cloud", "hybrid"] = "local"
+    requires_human_gate: bool = False
 
 
 class PipelineState(Contract):

@@ -10,6 +10,7 @@ from pathlib import Path
 
 from lumen.agents.sound_designer import dialogue_timeline
 from lumen.contracts import FilmProject
+from lumen.media_tools import resolve_ffmpeg
 
 Runner = Callable[..., subprocess.CompletedProcess[bytes]]
 
@@ -176,8 +177,8 @@ class Editor:
         missing = [shot.id for shot in project.shots if shot.id not in clips]
         if missing:
             raise ValueError("missing final clips: " + ", ".join(missing))
-        if shutil.which(self.ffmpeg_bin) is None:
-            raise FileNotFoundError(f"ffmpeg executable not found: {self.ffmpeg_bin}")
+        if shutil.which(self.ffmpeg_bin) is None and not Path(self.ffmpeg_bin).is_file():
+            self.ffmpeg_bin = resolve_ffmpeg(self.ffmpeg_bin)
         font = Path(font_file)
         if not font.is_file():
             raise FileNotFoundError(font)

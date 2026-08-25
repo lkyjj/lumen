@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import shutil
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -10,6 +9,7 @@ from typing import Any
 from lumen.agents.critic import Critic
 from lumen.config import load_project
 from lumen.contracts import Shot
+from lumen.media_tools import media_runtime
 from lumen.production import ModelScopeCriticAdapter
 from lumen.providers import DashScopeVideoProvider, ModelScopeProvider, video_capability
 from lumen.providers.base import VideoResult
@@ -83,15 +83,12 @@ class ProductionLiveBackend(LiveBackend):
                     "未发起网络请求。"
                 ),
             )
-        missing = [
-            name
-            for name, executable in (("ffmpeg", "ffmpeg"), ("ffprobe", "ffprobe"))
-            if shutil.which(executable) is None
-        ]
-        if missing:
+        try:
+            runtime = media_runtime()
+        except FileNotFoundError:
             return PreflightResult(
                 ok=False,
-                summary="Studio 缺少审片依赖：" + ", ".join(missing),
+                summary="Studio 缺少可用的 ffmpeg 媒体审片运行时。",
             )
         if not REFERENCE.is_file():
             return PreflightResult(ok=False, summary="演示锚点不存在，未生成。")
@@ -103,6 +100,7 @@ class ProductionLiveBackend(LiveBackend):
                 "resolution": request.resolution,
                 "duration": request.duration,
                 "reference": REFERENCE.name,
+                "media_runtime": runtime,
                 "remote_auth_checked": False,
             },
         )

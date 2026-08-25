@@ -12,7 +12,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from lumen.agents.art_director import ArtDirector, require_anchor_approval
+from lumen.agents.art_director import (
+    AnchorApprovalRequired,
+    ArtDirector,
+    require_anchor_approval,
+    unapproved_anchors,
+)
 from lumen.agents.cinematographer import Cinematographer, ShotNeedsHumanReview
 from lumen.agents.critic import Critic
 from lumen.agents.editor import Editor
@@ -31,6 +36,7 @@ from lumen.providers import (
 )
 from lumen.providers.base import VideoResult
 from lumen.runlog import RunLog
+from lumen.state import StateStore
 
 
 class SpendConfirmationRequired(RuntimeError):
@@ -243,6 +249,18 @@ def shoot_one(
         shot = next(item for item in context.project.shots if item.id == shot_id)
     except StopIteration as exc:
         raise ValueError(f"unknown shot id: {shot_id}") from exc
+    manifest = context.paths.clips / "generated" / f"{shot.id}_final.json"
+    if manifest.is_file():
+        payload = json.loads(manifest.read_text(encoding="utf-8"))
+        cached = Path(str(payload.get("clip_path", "")))
+        if cached.is_file() and payload.get("passed") is True:
+            context.run_log.append(
+                event="cinematographer.cache_hit",
+                agent="cinematographer",
+                status="skipped",
+                details={"shot_id": shot.id, "clip_path": str(cached)},
+            )
+            return str(cached)
     keyframe = context.paths.bible / "generated" / f"{shot.id}_keyframe.png"
     critic = Critic(
         vlm=ModelScopeCriticAdapter(
@@ -379,3 +397,97 @@ def render_master(
         details={"output": str(rendered)},
     )
     return str(rendered)
+
+
+PILOT_SHOTS = ("S03", "S06", "S12")
+
+
+def run_live_pipeline(
+    config_path: str | Path,
+    *,
+    confirmed: bool,
+    force: bool = False,
+    font_file: str | Path | None = None,
+) -> dict[str, Any]:
+    """Run the resumable production harness until completion or a human gate.
+
+    The harness reuses approved artifacts and passed clip manifests. It never
+    crosses a billable boundary without ``confirmed`` and never invents a human
+    approval or Go/No-Go decision.
+    """
+
+    require_spend_confirmation(confirmed)
+    from lumen.orchestrator import build_dag, run_offline
+
+    authoring = run_offline(config_path, force=force)
+    context = load_context(config_path)
+    dag = build_dag(context.project, context.paths.root)
+    state_store = StateStore(context.paths.state, context.paths.config)
+    state = state_store.load_or_create(dag)
+    report: dict[str, Any] = {"authoring": authoring}
+
+    missing_anchors = [
+        anchor for anchor in context.project.anchors
+        if not (context.paths.root / anchor.image).is_file()
+    ]
+    if missing_anchors:
+        report["anchors"] = generate_anchors(context, confirmed=True, force=force)
+    for anchor in context.project.anchors:
+        step = f"art_director.anchor.{anchor.id}"
+        state_store.mark(state, step, "succeeded" if anchor.approved else "pending")
+
+    pending = unapproved_anchors(context.project)
+    if pending:
+        for anchor_id in pending:
+            state_store.mark(
+                state,
+                f"art_director.anchor.{anchor_id}",
+                "pending",
+                needs_human=True,
+            )
+        context.run_log.append(
+            event="producer.human_gate",
+            agent="producer",
+            status="failed",
+            details={"gate": "anchor_approval", "anchor_ids": pending},
+        )
+        raise AnchorApprovalRequired(pending)
+
+    report["keyframes"] = generate_keyframes(context, confirmed=True, force=force)
+    for shot in context.project.shots:
+        state_store.mark(state, f"art_director.keyframe.{shot.id}", "succeeded")
+
+    decision_path = _go_no_go_path(context.paths)
+    if not decision_path.is_file():
+        pilots: dict[str, str] = {}
+        for shot_id in PILOT_SHOTS:
+            pilots[shot_id] = shoot_one(context, shot_id, confirmed=True)
+            state_store.mark(state, f"cinematographer.{shot_id}", "succeeded")
+            state_store.mark(state, f"critic.{shot_id}", "succeeded")
+        report["pilot_shots"] = pilots
+        context.run_log.append(
+            event="producer.human_gate",
+            agent="producer",
+            status="failed",
+            details={"gate": "go_no_go", "pilot_shots": list(PILOT_SHOTS)},
+        )
+        raise GoNoGoRequired(
+            f"三镜试拍已完成；请审核后填写 {decision_path}，decision 必须为 GO。"
+        )
+
+    require_go_decision(context.paths)
+    report["shots"] = shoot_all(context, confirmed=True)
+    for shot in context.project.shots:
+        state_store.mark(state, f"cinematographer.{shot.id}", "succeeded")
+        state_store.mark(state, f"critic.{shot.id}", "succeeded")
+    report["audio"] = synthesize_audio(context, confirmed=True)
+    state_store.mark(state, "sound_designer", "succeeded")
+    report["final"] = render_master(context, font_file=font_file)
+    state_store.mark(state, "editor", "succeeded")
+    context.run_log.append(
+        event="producer.pipeline_complete",
+        agent="producer",
+        status="succeeded",
+        details={"final": report["final"]},
+    )
+    return report

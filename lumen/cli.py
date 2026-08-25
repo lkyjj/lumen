@@ -32,6 +32,8 @@ def build_parser() -> argparse.ArgumentParser:
         help="offline 只物化定稿剧本/分镜；live 需要新凭据和人工门禁",
     )
     run.add_argument("--force", action="store_true", help="覆盖离线定稿 JSON")
+    run.add_argument("--confirm-spend", action="store_true", help="确认 live 模式的付费上限")
+    run.add_argument("--font-file", type=Path, help="成片中文字幕字体")
 
     validate = subparsers.add_parser("validate", help="严格校验 film.yaml")
     validate.add_argument("film", nargs="?", type=Path, default=DEFAULT_FILM)
@@ -51,6 +53,20 @@ def build_parser() -> argparse.ArgumentParser:
     produce.add_argument("--force", action="store_true")
     produce.add_argument("--font-file", type=Path)
 
+    create = subparsers.add_parser("create", help="一句话生成标准化单镜测试")
+    create.add_argument("logline", help="8–500 字的一句话故事")
+    create.add_argument("--film", type=Path, default=DEFAULT_FILM)
+    create.add_argument("--model", default="wan2.6-i2v-flash")
+    create.add_argument("--resolution", default="720P")
+    create.add_argument("--duration", type=int, default=5)
+    create.add_argument("--execute", action="store_true", help="执行真实生成；默认只预演")
+    create.add_argument("--confirm-spend", action="store_true")
+    create.add_argument(
+        "--output",
+        type=Path,
+        default=Path("projects/vanishing-light/06_cut/generated/one_sentence_demo.mp4"),
+    )
+
     return parser
 
 
@@ -66,12 +82,16 @@ def command_run(args: argparse.Namespace) -> int:
         print(json.dumps(outputs, ensure_ascii=False, indent=2))
         print("离线 authoring 已完成；未读取密钥、未联网、未产生费用。")
         return 0
-    print(
-        "live 全片运行需要：轮换后的新凭据、E-06 锚点人工批准、D9 Go/No-Go。\n"
-        "请先运行 dry-run 与 offline 模式，再按 README 的分阶段命令执行。",
-        file=sys.stderr,
+    from lumen.production import run_live_pipeline
+
+    outputs = run_live_pipeline(
+        args.film,
+        confirmed=args.confirm_spend,
+        force=args.force,
+        font_file=args.font_file,
     )
-    return 3
+    print(json.dumps(outputs, ensure_ascii=False, indent=2))
+    return 0
 
 
 def command_validate(args: argparse.Namespace) -> int:
@@ -124,6 +144,31 @@ def command_produce(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_create(args: argparse.Namespace) -> int:
+    from lumen.one_sentence import execute_one_sentence, plan_one_sentence
+
+    if args.execute:
+        result = execute_one_sentence(
+            args.logline,
+            film=args.film,
+            output=args.output,
+            model=args.model,
+            resolution=args.resolution,
+            duration=args.duration,
+            confirmed=args.confirm_spend,
+        )
+    else:
+        result = plan_one_sentence(
+            args.logline,
+            film=args.film,
+            model=args.model,
+            resolution=args.resolution,
+            duration=args.duration,
+        )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -136,6 +181,8 @@ def main(argv: list[str] | None = None) -> int:
             return command_status(args)
         if args.command == "produce":
             return command_produce(args)
+        if args.command == "create":
+            return command_create(args)
     except (FileNotFoundError, RuntimeError, ValueError, ValidationError) as exc:
         print(f"错误: {redact(str(exc))}", file=sys.stderr)
         return 2

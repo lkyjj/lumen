@@ -38,10 +38,12 @@ flowchart LR
 
 ## 快速开始
 
-要求：Python 3.11+；真实剪辑与审片抽帧还需要 `ffmpeg`/`ffprobe`。
+要求：Python 3.11+。项目通过 `imageio-ffmpeg` 自带便携 ffmpeg；如果系统另有
+`ffmpeg`/`ffprobe` 会优先使用系统版本。
 
 ```bash
-cd /Users/king/lumen
+git clone https://github.com/lkyjj/lumen.git
+cd lumen
 uv venv --python 3.12
 uv pip install --python .venv/bin/python -e '.[dev,studio]'
 
@@ -54,6 +56,9 @@ uv pip install --python .venv/bin/python -e '.[dev,studio]'
 # 从已冻结的 film.yaml 生成 script.json / shots.json
 .venv/bin/lumen run projects/vanishing-light/film.yaml --mode offline
 
+# 统一“一句话生成”标准测试：默认只规划、报价，零网络零费用
+.venv/bin/lumen create "最后一座灯塔熄灭前，守塔人看见海面升起第二个太阳。"
+
 # 零网络、零 API 费用：用视觉锚点生成严格 15 秒概念预告
 .venv/bin/python scripts/build_demo.py
 
@@ -62,6 +67,8 @@ uv pip install --python .venv/bin/python -e '.[dev,studio]'
 ```
 
 `--dry-run` 不实例化 Provider、不读取 API Key、不写运行状态。它按官方原价展示首次生成和“首次 + 最多两次重拍”的最坏成本；任何折扣只有在控制台确认后才能显式写入配置。
+
+评分标准与证据位置见 [电影 Agent 评分标准对照](docs/RUBRIC_COMPLIANCE.md)。
 
 ## 真实 Provider
 
@@ -111,6 +118,20 @@ FILM=projects/vanishing-light/film.yaml
 .venv/bin/lumen produce "$FILM" --stage render
 ```
 
+也可让制片 Harness 从当前断点连续推进；它会复用冻结稿、已生成首帧与已经通过审片的
+镜头 manifest，并在视觉锚点审批或 D9 Go/No-Go 处安全暂停：
+
+```bash
+.venv/bin/lumen run "$FILM" --mode live --confirm-spend
+```
+
+统一一句话入口的真实单镜模式使用同一套请求级凭据、能力检查、最坏报价和三帧审片：
+
+```bash
+.venv/bin/lumen create "最后一座灯塔熄灭前，守塔人看见海面升起第二个太阳。" \
+  --execute --confirm-spend
+```
+
 `render` 要求 14 条通过审片的最终视频和两条对白音频均已存在；输出为
 `projects/vanishing-light/06_cut/generated/final.mp4`。任何一项缺失都会明确停止，
 不会交付残缺母版。
@@ -147,6 +168,15 @@ Git 历史；提交时应作为 GitHub Release 附件或上传到视频平台。
 .venv/bin/python studio/app.py
 ```
 
+魔搭创空间从仓库根目录部署：`app.py` 暴露模块级 `demo`，根目录
+`requirements.txt` 复用锁定的 Studio 依赖。创空间启动命令可填写：
+
+```bash
+python app.py
+```
+
+部署后仍默认展示零成本概念预告；真实单镜必须由访客在当前请求中输入自己的凭据并确认报价。
+
 ## 目录
 
 ```text
@@ -161,6 +191,8 @@ lumen/
 projects/vanishing-light/  电影源代码与阶段产物
 studio/                    魔搭创空间 Gradio 应用
 tests/                     离线单元与集成测试
+notebooks/                 可复现 Quickstart Notebook
+scripts/check_submission.py 评分证据与提交缺口审计
 ```
 
 ## 可复现性的定义

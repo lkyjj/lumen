@@ -2,7 +2,7 @@
 
 > 文档性质：人工整理的、可审查的目标架构，不是 Qoder 自动生成结果。
 >
-> 当前状态：规则与专家 Agent 文档已落仓；以下运行时代码、测试、媒体管线和部署仍是计划，不能视为已经实现或验证。
+> 当前状态：运行时代码、离线测试、便携媒体管线和 ModelScope Studio 入口已落仓；真实 Provider 成片仍受锚点审批、Go/No-Go、有效凭据与付费确认门禁约束，不能把概念预告当作完整成片。
 
 ## 1. 系统目标
 
@@ -42,16 +42,16 @@ film.yaml
 
 | 组件 | 职责 | 主要输入 | 主要输出 | 当前状态 |
 |---|---|---|---|---|
-| `producer` / `orchestrator` | DAG 调度、缓存、断点续跑、有限重试 | `film.yaml` | 运行状态 | 未实现 |
-| `screenwriter` | 将 logline 变为结构化剧本 | 电影设定 | `script.json` | 仅有专家说明 |
-| `storyboarder` | 拆解可生成、可审片镜头 | 剧本 | `shots.json` | 仅有专家说明 |
-| `art_director` | 生成并管理角色/场景锚点 | 角色与风格 | `bible/*.png` | 未实现 |
-| `cinematographer` | 以分镜和锚点生成片段 | `Shot`、锚点 | `clips/*.mp4` | 未实现 |
-| `sound_designer` | 生成系统音、人声、音效和音乐 | 剧本、镜头表 | `audio/*.wav` | 未实现 |
-| `critic` | 四维评分并产生修正意见 | 片段、意图、锚点 | 审片结果 | 仅有专家说明 |
-| `editor` | 合成画面、声音和字幕 | 已通过片段、音轨 | `final.mp4` | 未实现 |
-| `providers` | 隔离模型、HTTP、轮询和本地工具差异 | 类型化请求 | 类型化响应 | 未实现 |
-| `budget` | 请求前硬熔断、成功后记账 | 估算费用 | 账本记录 | 未实现 |
+| `producer` / `orchestrator` | DAG 调度、缓存、断点续跑、有限重试 | `film.yaml` | 运行状态 | 已实现；真实全片待门禁 |
+| `screenwriter` | 将 logline 变为结构化剧本 | 电影设定 | `script.json` | 冻结作品适配器已实现 |
+| `storyboarder` | 拆解可生成、可审片镜头 | 剧本 | `shots.json` | 冻结作品适配器已实现 |
+| `art_director` | 生成并管理角色/场景锚点 | 角色与风格 | `bible/*.png` | Provider、版本与审批门已实现 |
+| `cinematographer` | 以分镜和锚点生成片段 | `Shot`、锚点 | `clips/*.mp4` | I2V、缓存、有限重拍已实现 |
+| `sound_designer` | 生成系统音、人声、音效和音乐 | 剧本、镜头表 | `audio/*.wav` | TTS 对白已实现；完整声音设计待成片 |
+| `critic` | 四维评分并产生修正意见 | 片段、意图、锚点 | 审片结果 | 三帧 VLM 审片与本地裁决已实现 |
+| `editor` | 合成画面、声音和字幕 | 已通过片段、音轨 | `final.mp4` | ffmpeg 合成与严格校验已实现 |
+| `providers` | 隔离模型、HTTP、轮询和本地工具差异 | 类型化请求 | 类型化响应 | ModelScope、DashScope 与 Fake 已实现 |
+| `budget` | 请求前硬熔断、成功后记账 | 估算费用 | 账本记录 | 已实现并有离线测试 |
 
 ## 4. 数据与控制边界
 
@@ -91,5 +91,4 @@ film.yaml
 6. 用户确认角色锚点和 Go / No-Go；
 7. 批量生成、剪辑、成片与部署验收。
 
-在这些证据出现之前，本文件中的组件保持“计划”状态。
-
+机器可验证证据由测试、`scripts/check_submission.py`、状态文件和脱敏账本给出；账号侧部署、真实生成质量与最终作品仍需创作者在人工门禁后验收。

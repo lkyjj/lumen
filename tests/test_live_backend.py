@@ -17,7 +17,10 @@ def test_ephemeral_budget_is_request_local() -> None:
 
 
 def test_preflight_is_local_and_reports_missing_ffmpeg(monkeypatch) -> None:
-    monkeypatch.setattr("studio.live_backend.shutil.which", lambda _: None)
+    def missing_media_runtime() -> dict[str, object]:
+        raise FileNotFoundError("ffmpeg runtime unavailable")
+
+    monkeypatch.setattr("studio.live_backend.media_runtime", missing_media_runtime)
     backend = ProductionLiveBackend(RequestCredentials("model-key", "video-key"))
     result = backend.preflight(
         LiveShotRequest(
@@ -34,7 +37,10 @@ def test_preflight_is_local_and_reports_missing_ffmpeg(monkeypatch) -> None:
 
 
 def test_preflight_rejects_unsupported_duration_without_network(monkeypatch) -> None:
-    monkeypatch.setattr("studio.live_backend.shutil.which", lambda _: "/bin/tool")
+    monkeypatch.setattr(
+        "studio.live_backend.media_runtime",
+        lambda: {"ffmpeg": "/bin/tool", "ffprobe": "/bin/tool", "portable": False},
+    )
     backend = ProductionLiveBackend(RequestCredentials("model-key", "video-key"))
     result = backend.preflight(
         LiveShotRequest(

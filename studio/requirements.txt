@@ -1,4 +1,5 @@
 gradio==6.26.0
+imageio-ffmpeg==0.6.0
 openai==2.14.0
 pillow==12.0.0
 pydantic==2.13.4
