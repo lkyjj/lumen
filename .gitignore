@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# env / secrets
+.env
+.env.*
+
+# node
+node_modules/
+
+# video / large media renders
+*.mp4
+*.mov
+*.mkv
+*.avi
+
+# Qoder editor local state (leave rules/agents to be added manually)
+.qoder/logs/
+.qoder/cache/
