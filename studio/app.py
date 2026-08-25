@@ -256,9 +256,13 @@ def load_demo_snapshot(project_dir: str | Path) -> DemoSnapshot:
         root / "06_cut" / "final.mp4",
     )
     final_path = next((path for path in final_candidates if path.is_file()), None)
-    final_video = str(final_path) if final_path is not None else None
-    if final_video is None:
-        notices.append("最终成片尚不存在；film.yaml 与现有证据仍可浏览。")
+    demo_path = root / "06_cut" / "generated" / "demo_15s_v1.mp4"
+    display_path = final_path or (demo_path if demo_path.is_file() else None)
+    final_video = str(display_path) if display_path is not None else None
+    if final_path is None and demo_path.is_file():
+        notices.append("完整成片尚不存在；当前播放器展示 15 秒概念预告。")
+    elif final_video is None:
+        notices.append("最终成片与概念预告尚不存在；film.yaml 与现有证据仍可浏览。")
 
     return DemoSnapshot(
         film_yaml=film_yaml,
@@ -646,7 +650,7 @@ def build_app(
             gr.Markdown(_notice_markdown(snapshot))
             gr.Video(
                 value=snapshot.final_video,
-                label="最终成片（存在时显示）",
+                label="最终成片 / 15 秒概念预告（存在时显示）",
                 interactive=False,
             )
             with gr.Accordion("电影的源代码 · film.yaml", open=True):

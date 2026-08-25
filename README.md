@@ -54,6 +54,9 @@ uv pip install --python .venv/bin/python -e '.[dev,studio]'
 # 从已冻结的 film.yaml 生成 script.json / shots.json
 .venv/bin/lumen run projects/vanishing-light/film.yaml --mode offline
 
+# 零网络、零 API 费用：用视觉锚点生成严格 15 秒概念预告
+.venv/bin/python scripts/build_demo.py
+
 # 测试
 .venv/bin/pytest
 ```
@@ -111,6 +114,11 @@ FILM=projects/vanishing-light/film.yaml
 `render` 要求 14 条通过审片的最终视频和两条对白音频均已存在；输出为
 `projects/vanishing-light/06_cut/generated/final.mp4`。任何一项缺失都会明确停止，
 不会交付残缺母版。
+
+15 秒概念预告输出为
+`projects/vanishing-light/06_cut/generated/demo_15s_v1.mp4`：720p、24fps、H.264 + AAC，
+画面来自四组原创锚点，声音为本地程序合成，不调用外部模型。MP4 属于生成物，不进入
+Git 历史；提交时应作为 GitHub Release 附件或上传到视频平台。
 
 ## 审片闭环
 
