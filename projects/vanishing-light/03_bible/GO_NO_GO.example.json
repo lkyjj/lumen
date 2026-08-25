@@ -1,0 +1,8 @@
+{
+  "decision": "GO_OR_PLAN_B",
+  "reviewed_at": "YYYY-MM-DDTHH:MM:SS+08:00",
+  "reviewed_by": "filmmaker name",
+  "test_shots": ["S03", "S06", "S12"],
+  "model": "wan2.6-i2v-flash",
+  "notes": "Record identity/temporal-stability evidence. Rename to GO_NO_GO.json only after review."
+}

@@ -1,0 +1,44 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "lumen-film-agent"
+version = "0.1.0"
+description = "LUMEN: a contract-driven, budget-aware AI film crew"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "LUMEN team" }]
+dependencies = [
+  "openai>=1.68,<3",
+  "pydantic>=2.9,<3",
+  "PyYAML>=6.0,<7",
+  "requests>=2.32,<3",
+  "Pillow>=11,<13",
+]
+
+[project.optional-dependencies]
+studio = ["gradio>=5.20,<7"]
+dev = [
+  "pytest>=8.3,<10",
+  "pytest-cov>=6,<8",
+  "ruff>=0.11,<1",
+]
+
+[project.scripts]
+lumen = "lumen.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["lumen"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]

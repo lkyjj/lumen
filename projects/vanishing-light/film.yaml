@@ -1,0 +1,256 @@
+film:
+  title: 消失的光芒
+  title_en: The Vanishing Light
+  logline: >-
+    末日之后，最后一个守灯人用仅剩的一格电，在“再进化一次活下去”和
+    “点亮灯塔九十秒”之间做选择。
+  duration_target: 100
+  title_cards_duration: 5
+  aspect_ratio: "16:9"
+  resolution: 720P
+  language: zh-CN
+
+style:
+  look: 低照度、冷蓝灰、单光源、颗粒感、类胶片
+  palette: ["#0B1015", "#16232B", "#2E4A57", "#C8A46A"]
+  camera: 固定机位为主，全片仅两次缓慢运动
+  forbidden:
+    - 多人同框
+    - 对白口型特写
+    - 快速动作与打斗
+    - 手部精细操作
+    - 任何已有科幻 IP 的视觉符号
+
+cast:
+  - id: E06
+    name: 守灯人
+    anchor_prompt: >-
+      原创虚构亚洲男性，40岁上下，短发凌乱，左脸一道旧疤；左小臂以下为磨损
+      金属义肢且缝隙透出微弱青光；左眼为淡青光学元件，右眼为湿润的人类眼睛；
+      深灰色旧防寒服，领口磨破。不得模仿任何真人或既有影视角色。
+    anchor_image: 03_bible/candidates/E06_front_v1.png
+
+locations:
+  - id: LIGHTHOUSE_TOP
+    name: 灯塔顶层控制室
+    anchor_prompt: >-
+      原创废弃海边灯塔顶层控制室，弧形落地窗外是无光黑海，室内唯一光源是
+      老式仪表盘微光，墙上有大型老式闸刀开关，低照度冷蓝灰。
+    anchor_image: 03_bible/candidates/anchor_A_lighthouse_back_v1.png
+  - id: BLACK_SEA
+    name: 无光海面
+    anchor_prompt: 厚重尘幕覆盖天空，灰蓝黑海面没有太阳与月亮，远处没有任何灯光。
+  - id: MEMORY_LIGHTHOUSE
+    name: 记忆中的灯塔
+    anchor_prompt: 同一座灯塔多年前的温暖记忆，灯光扫过海面，画面像损坏录像。
+
+anchors:
+  - id: A
+    image: 03_bible/candidates/anchor_A_lighthouse_back_v1.png
+    approved: false
+    source_cast: E06
+    source_location: LIGHTHOUSE_TOP
+    prompt: >-
+      灯塔顶层控制室固定中景机位，守灯人背对镜头坐在中央偏左，弧形窗外为黑海，
+      仪表盘是唯一光源；此图锁定 S03 与 S08 的构图。
+  - id: B
+    image: 03_bible/candidates/E06_front_v1.png
+    approved: false
+    source_cast: E06
+    source_location: LIGHTHOUSE_TOP
+    prompt: >-
+      守灯人正面中近景，左眼淡青光学元件、右眼为湿润人眼，左脸旧疤，冷蓝灰单光源；
+      此图锁定 S06 与 S11 的人物特征和机位。
+  - id: HANDS
+    image: 03_bible/candidates/E06_hands_v1.png
+    approved: false
+    source_cast: E06
+    source_location: LIGHTHOUSE_TOP
+    prompt: >-
+      右手为人的手，左小臂以下为磨损金属义肢，两手安静放在膝上；构图避免可见手指细节。
+  - id: EVOLVED_EYES
+    image: 03_bible/candidates/E06_evolved_eyes_v1.png
+    approved: false
+    source_cast: E06
+    source_location: LIGHTHOUSE_TOP
+    prompt: 进化后的 E-06 双眼均为明亮但干燥无反光的光学元件，大特写，原创造型。
+
+budget:
+  currency: CNY
+  hard_cap: 300
+  warn_at: 200
+  video_model: wan3.0-video
+  stable_video_model: wan2.7-i2v-2026-04-25
+  fallback_video_model: wan2.6-i2v-flash
+  image_model: wan2.6-t2i
+  tts_model: cosyvoice-v3-flash
+  pricing:
+    video_cny_per_second:
+      wan3.0-video:
+        480P: 0.30
+        720P: 0.60
+        1080P: 1.20
+      wan2.7-i2v-2026-04-25:
+        720P: 0.60
+      wan2.6-i2v-flash:
+        720P: 0.15  # audio=false 无声档；调用前仍以控制台为准
+    image_cny_each: 0.20
+    tts_cny_per_10k_characters:
+      cosyvoice-v3-flash: 1.00
+      cosyvoice-v3-plus: 2.00
+      cosyvoice-v3.5-plus: 1.50
+    discount_multiplier: 1.0  # 仅在控制台确认优惠后由操作者显式修改
+
+quality_gate:
+  min_score: 7.0
+  min_dimension_score: 6.0
+  max_retries: 2
+  dimensions: [角色一致性, 构图符合分镜, 光线氛围, 无明显崩坏]
+
+shots:
+  - id: S01
+    duration: 7
+    size: 大远景
+    movement: 极慢横移
+    cast: []
+    location: BLACK_SEA
+    intent: 用没有任何光的海交代“大寂静”后的世界。
+    prompt_seed: 灰蓝色黑海，厚重尘幕遮蔽天空，没有太阳月亮或灯光，镜头极慢横移。
+    audio: {sfx: [风声, 低频嗡鸣]}
+  - id: S02
+    duration: 6
+    size: 远景
+    movement: 固定
+    cast: []
+    location: BLACK_SEA
+    intent: 建立孤立、锈蚀、尚未点亮的灯塔。
+    prompt_seed: 礁石上的锈蚀灯塔完全熄灭，黑浪拍击礁石，固定远景。
+    audio: {sfx: [风声, 海浪]}
+  - id: S03
+    duration: 5
+    size: 中景背影
+    movement: 固定
+    anchor: A
+    reference_type: first_frame
+    cast: [E06]
+    location: LIGHTHOUSE_TOP
+    intent: 人背对镜头坐着，观众和他一起看海，建立人与空间关系。
+    prompt_seed: 同机位锚点A，守灯人背对镜头静坐，面向弧形窗外黑海，仪表盘是唯一光源。
+    audio: {sfx: [电流声, 微弱心跳]}
+  - id: S04
+    duration: 5
+    size: 特写
+    movement: 固定
+    cast: []
+    location: LIGHTHOUSE_TOP
+    intent: 让最后一格电成为可见的选择压力。
+    prompt_seed: 老式仪表盘特写，仅一格电量灯缓慢闪烁，其余刻度归零，固定镜头。
+    audio: {sfx: [滴答声]}
+  - id: S05
+    duration: 6
+    size: 大特写
+    movement: 固定
+    anchor: HANDS
+    reference_type: reference_image
+    cast: [E06]
+    location: LIGHTHOUSE_TOP
+    intent: 对比右手的人性与左臂的六次进化痕迹。
+    prompt_seed: 双手安静放在膝上，右手为人手，左小臂为磨损金属义肢，仅有极轻伺服动作。
+    audio: {sfx: [义肢伺服轻响]}
+  - id: S06
+    duration: 7
+    size: 中近景正面
+    movement: 极慢推近
+    anchor: B
+    reference_type: first_frame
+    cast: [E06]
+    location: LIGHTHOUSE_TOP
+    intent: 明确“一只机器眼、一只人的眼睛”这个核心符号。
+    prompt_seed: 正面锚点B，守灯人完全静止，左眼淡青光学元件、右眼人眼，镜头极慢推近。
+    audio: {sfx: [系统提示音]}
+  - id: S07
+    duration: 8
+    size: 主观视角
+    movement: 固定
+    cast: []
+    location: LIGHTHOUSE_TOP
+    intent: 系统给出第七次进化与预演选择。
+    prompt_seed: 第一人称视野，半透明界面显示 EVOLUTION 07 READY 与 POWER REMAINING 1，克制冷静。
+    audio:
+      voice: 进化程序07已就绪。剩余能源：1。是否预演结果？
+      voice_role: system
+      sfx: [系统提示音]
+  - id: S08
+    duration: 8
+    size: 中景
+    movement: 固定
+    anchor: A
+    reference_type: first_frame
+    cast: [E06]
+    location: LIGHTHOUSE_TOP
+    intent: 同一机位展示进化后的人不再看海，揭示“活着但不再是人”。
+    prompt_seed: 同机位锚点A，进化后躯体高度金属化、双眼为光学元件，转而面向墙壁，色调更冷。
+    audio: {music: 单音极简}
+  - id: S09
+    duration: 6
+    size: 大特写
+    movement: 固定
+    anchor: EVOLVED_EYES
+    reference_type: reference_image
+    cast: [E06]
+    location: LIGHTHOUSE_TOP
+    intent: 机器眼很亮，却没有反光、湿度或情感。
+    prompt_seed: 两只明亮光学眼大特写，表面干燥无反光，人物完全不动，冷蓝光。
+    audio: {music: 单音极简}
+  - id: S10
+    duration: 7
+    size: 记忆远景
+    movement: 固定
+    cast: []
+    location: MEMORY_LIGHTHOUSE
+    intent: 用损坏记忆证明灯光曾经带人回家。
+    prompt_seed: 降质记忆录像，同一扇窗与温暖灯光，光柱扫过海面，一艘小船返航，噪点掉帧色偏。
+    audio: {music: 温暖单音与极轻人声哼唱}
+  - id: S11
+    duration: 6
+    size: 眼部特写
+    movement: 固定
+    anchor: B
+    reference_type: first_frame
+    cast: [E06]
+    location: LIGHTHOUSE_TOP
+    intent: 人类右眼出现水光，倒计时逼近，确认他仍保有人性。
+    prompt_seed: 回到正面锚点B，只强调右侧人类眼睛的一点水光，界面倒计时00:09，人物不张嘴。
+    audio: {sfx: [增强心跳, 倒计时电子音]}
+  - id: S12
+    duration: 7
+    size: 中景侧面手部
+    movement: 固定
+    anchor: HANDS
+    reference_type: reference_image
+    cast: [E06]
+    location: LIGHTHOUSE_TOP
+    intent: 用一次粗大的整手臂动作完成选择，避开手指级精细操作与口型。
+    prompt_seed: 侧面中景只见金属前臂，整只义肢手稳稳握住大型闸刀并向下拉，不展示手指细节，人物背对镜头。
+    audio:
+      voice: ……万一呢。
+      voice_role: human
+      sfx: [一拍静音]
+  - id: S13
+    duration: 9
+    size: 大远景
+    movement: 缓慢升起
+    cast: []
+    location: BLACK_SEA
+    intent: 灯塔光柱扫过黑海，选择转化为可见行动。
+    prompt_seed: 锈蚀灯塔突然点亮，温暖光柱缓慢扫过黑海一圈又一圈，摄影机缓慢升起。
+    audio: {music: 音乐全开}
+  - id: S14
+    duration: 8
+    size: 大远景
+    movement: 固定
+    cast: []
+    location: BLACK_SEA
+    intent: 灯灭后远方出现回应，给“万一”一个微小答案。
+    prompt_seed: 灯塔熄灭后全黑三秒，遥远海平线出现一个极小光点并闪两次，固定远景。
+    audio: {sfx: [风声, 极轻回应音]}

@@ -4,6 +4,19 @@
 # env / secrets
 .env
 .env.*
+!.env.example
+
+# Python
+.venv/
+.uv-cache/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+dist/
+build/
 
 # node
 node_modules/
@@ -13,6 +26,18 @@ node_modules/
 *.mov
 *.mkv
 *.avi
+*.wav
+*.flac
+
+# Generated LUMEN state and provider downloads
+projects/*/run.jsonl
+projects/*/.lumen-state.json
+projects/*/01_script/*.json
+projects/*/02_shots/*.json
+projects/*/03_bible/generated/
+projects/*/04_clips/generated/
+projects/*/05_audio/generated/
+projects/*/06_cut/generated/
 
 # Qoder editor local state (leave rules/agents to be added manually)
 .qoder/logs/

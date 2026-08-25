@@ -1,0 +1,1 @@
+"""ModelScope Studio application package."""
